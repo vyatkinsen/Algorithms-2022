@@ -2,6 +2,10 @@ package lesson1;
 
 import kotlin.NotImplementedError;
 
+import java.io.*;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+
 @SuppressWarnings("unused")
 public class JavaTasks {
     /**
@@ -131,8 +135,31 @@ public class JavaTasks {
      * 2
      * 2
      */
-    static public void sortSequence(String inputName, String outputName) {
-        throw new NotImplementedError();
+    static public void sortSequence(String inputName, String outputName) throws IOException {
+        List<Integer> numbers = new LinkedList<>();
+        Map<Integer, Integer> map = new HashMap<>();
+        int maxAmount = 0;
+        int prevAmount = 0;
+        int minNum = Integer.MAX_VALUE;
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(inputName)))) {
+            String line = reader.readLine();
+            while (line != null) {
+                int num = Integer.parseInt(line);
+                numbers.add(num);
+                if (!map.containsKey(num)) map.put(num, 1);
+                else {
+                    map.put(num, map.get(num) + 1);
+                    if (map.get(num) >= maxAmount) maxAmount = map.get(num);
+                }
+                line = reader.readLine();
+            }
+        }
+        for (Map.Entry<Integer, Integer> pair:map.entrySet())
+            if (pair.getValue() == maxAmount && minNum > pair.getKey()) minNum = pair.getKey();
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputName))) {
+            for (int i : numbers) if (i != minNum) writer.write(i + "\n");
+            if (maxAmount != 0) writer.write((minNum + "\n").repeat(maxAmount));
+        }
     }
 
     /**
