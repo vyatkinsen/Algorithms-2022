@@ -4,7 +4,6 @@ import kotlin.NotImplementedError;
 
 import java.io.*;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @SuppressWarnings("unused")
 public class JavaTasks {
@@ -102,8 +101,22 @@ public class JavaTasks {
      * 99.5
      * 121.3
      */
-    static public void sortTemperatures(String inputName, String outputName) {
-        throw new NotImplementedError();
+    //В данном случае N - количество строк во входном файле
+    //T = O(N)
+    //R = O(N)
+    static public void sortTemperatures(String inputName, String outputName) throws IOException {
+        int[] values = new int[7731];
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(inputName)))) {
+            String line = reader.readLine();
+            while (line != null) {
+                int currentValue = (int) (Double.parseDouble(line) * 10);
+                values[2730 + currentValue]++;
+                line = reader.readLine();
+            }
+        }
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputName))) {
+            for (int i = 0; i < values.length; i++) writer.write(((double) (i - 2730) / 10 + "\n").repeat(values[i]));
+        }
     }
 
     /**
@@ -135,6 +148,9 @@ public class JavaTasks {
      * 2
      * 2
      */
+    //В данном случае N - количество строк во входном файле
+    //T = O(N)
+    //R = O(N)
     static public void sortSequence(String inputName, String outputName) throws IOException {
         List<Integer> numbers = new LinkedList<>();
         Map<Integer, Integer> map = new HashMap<>();
