@@ -152,7 +152,7 @@ abstract class AbstractAlgorithmsTests {
         assertEquals(348513, calcPrimesNumber(5000000))
         assertEquals(664579, calcPrimesNumber(10000000))
         assertEquals(1270607, calcPrimesNumber(20000000))
-        assertEquals(26355867, calcPrimesNumber(500000000))
-        assertEquals(26357378, calcPrimesNumber(500030032))
+        assertEquals(16252325, calcPrimesNumber(300000000))
+        assertEquals(16253881, calcPrimesNumber(300030032))
     }
 }
