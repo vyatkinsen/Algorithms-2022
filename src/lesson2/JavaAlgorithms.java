@@ -2,6 +2,7 @@ package lesson2;
 
 import kotlin.NotImplementedError;
 import kotlin.Pair;
+import org.jetbrains.annotations.NotNull;
 
 @SuppressWarnings("unused")
 public class JavaAlgorithms {
@@ -88,7 +89,7 @@ public class JavaAlgorithms {
 
     /**
      * Наибольшая общая подстрока.
-     * Средняя
+     * Средняя.
      *
      * Дано две строки, например ОБСЕРВАТОРИЯ и КОНСЕРВАТОРЫ.
      * Найти их самую длинную общую подстроку -- в примере это СЕРВАТОР.
@@ -97,8 +98,29 @@ public class JavaAlgorithms {
      * Если имеется несколько самых длинных общих подстрок одной длины,
      * вернуть ту из них, которая встречается раньше в строке first.
      */
-    static public String longestCommonSubstring(String firs, String second) {
-        throw new NotImplementedError();
+    //T = O(first.length() * second.length())
+    //R = O(min(first.length(), second.length()))
+    @NotNull
+    static public String longestCommonSubstring(String first, String second) {
+        int lastIndOfMaxLenSubstr, lenOfMaxSubstr;
+        lastIndOfMaxLenSubstr = lenOfMaxSubstr = -1;
+        String shortStr = first.length() >= second.length() ? second : first;
+        String longStr = first.length() >= second.length() ? first : second;
+        int[][] buffer = new int[2][shortStr.length()];
+        for (int i = 0; i < longStr.length(); i++) {
+            for (int j = 0; j < shortStr.length(); j++) {
+                if (longStr.charAt(i) == shortStr.charAt(j)) {
+                    if (i > 0 && j > 0) buffer[1][j] = buffer[0][j - 1] + 1;
+                    else buffer[1][j] = 1;
+                    if (buffer[1][j] > lenOfMaxSubstr) {
+                        lastIndOfMaxLenSubstr = i;
+                        lenOfMaxSubstr = buffer[1][j];
+                    }
+                } else buffer[1][j] = 0;
+            }
+            buffer[0] = buffer[1].clone();
+        }
+        return lenOfMaxSubstr != -1 ? first.substring(lastIndOfMaxLenSubstr - lenOfMaxSubstr + 1, lastIndOfMaxLenSubstr + 1) : "";
     }
 
     /**
@@ -112,6 +134,16 @@ public class JavaAlgorithms {
      * Единица простым числом не считается.
      */
     static public int calcPrimesNumber(int limit) {
-        throw new NotImplementedError();
+            if (limit < 2) return 0;
+            boolean[] num = new boolean[limit + 1];
+            int count = 0;
+            for (int i = 2; i <= limit; i++) {
+                if (!num[i]) {
+                    for (int j = i * 2; j <= limit; j += i) num[j] = true;
+                    count++;
+                }
+            }
+            return count;
+        }
     }
-}
+
