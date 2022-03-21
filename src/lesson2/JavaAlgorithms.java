@@ -133,6 +133,8 @@ public class JavaAlgorithms {
      * Справка: простым считается число, которое делится нацело только на 1 и на себя.
      * Единица простым числом не считается.
      */
+    //T = O(n*log(log(n)))
+    //R = O(n), ~ limit
     static public int calcPrimesNumber(int limit) {
             if (limit < 2) return 0;
             boolean[] num = new boolean[limit + 1];
