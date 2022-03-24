@@ -12,6 +12,7 @@ public class BinarySearchTree<T extends Comparable<T>> extends AbstractSet<T> im
         final T value;
         Node<T> left = null;
         Node<T> right = null;
+        Node<T> parent = null;
 
         Node(T value) {
             this.value = value;
@@ -79,14 +80,17 @@ public class BinarySearchTree<T extends Comparable<T>> extends AbstractSet<T> im
         else if (comparison < 0) {
             assert closest.left == null;
             closest.left = newNode;
+            closest.left.parent = closest;
         }
         else {
             assert closest.right == null;
             closest.right = newNode;
+            closest.right.parent = closest;
         }
         size++;
         return true;
     }
+
 
     /**
      * Удаление элемента из дерева
@@ -99,11 +103,68 @@ public class BinarySearchTree<T extends Comparable<T>> extends AbstractSet<T> im
      *
      * Средняя
      */
+    //T = O(N)
+    //R = O(1)
     @Override
     public boolean remove(Object o) {
-        // TODO
-        throw new NotImplementedError();
+        Node<T> deletingNode = root;
+        T deletingValue = (T) o;
+        if (deletingNode == null) return false;
+
+        while (deletingNode.value != deletingValue) {                  //в этом цикле  ищем в дереве удаляемый узел
+            if (deletingValue.compareTo(deletingNode.value) < 0) deletingNode = deletingNode.left;
+            else deletingNode = deletingNode.right;
+            if (deletingNode == null) return false;
+        }
+        size--;
+        if (deletingNode.left == null && deletingNode.right == null) { //когда удаляемый узел - лист (нет потомков)
+            substitution(deletingNode, null);
+        } else if (deletingNode.right == null) {                       //когда у удаляемого узла 1 левый потомок
+            substitution(deletingNode, deletingNode.left);
+        } else if (deletingNode.left == null)                          //когда у удаляемого узла 1 правый потомок
+            substitution(deletingNode, deletingNode.right);
+        else {                                                         //когда у удаляемого узла 2 потомка
+            Node<T> descendant = findMinNode(deletingNode.right);
+            substitution(deletingNode, descendant);
+            descendant.left = deletingNode.left;
+        }
+        return true;
     }
+
+    /**
+     * Функция производит замену узла replaceableNode на replacementNode
+     */
+    protected void substitution(Node<T> replaceableNode, Node<T> replacementNode) {
+        if (replaceableNode == root) {
+            root = replacementNode;
+        } else if (replaceableNode.parent.left == replaceableNode) {
+            replaceableNode.parent.left = replacementNode;
+        } else {
+            replaceableNode.parent.right = replacementNode;
+        }
+    }
+
+    /**
+     * Функция ищет самый левый лист из правой ветки (относительно узла startNode).
+     * То есть, будет найдено минимальное число из множества чисел, которые >= startNode.
+     * Функция возвращает этот самый лист.
+     */
+    protected Node<T> findMinNode(Node<T> startNode) {
+        Node<T> parentOfMinNode, minNode, current;
+        parentOfMinNode = minNode = null;
+        current = startNode;
+        while (current != null) {
+            parentOfMinNode = minNode;
+            minNode = current;
+            current = current.left;
+        }
+        if (minNode != startNode) {
+            parentOfMinNode.left = minNode.right;
+            minNode.right = startNode;
+        }
+        return minNode;
+    }
+
 
     @Nullable
     @Override
@@ -118,9 +179,14 @@ public class BinarySearchTree<T extends Comparable<T>> extends AbstractSet<T> im
     }
 
     public class BinarySearchTreeIterator implements Iterator<T> {
+        private Node<T> startNode, finishNode;
+        private final Integer maxIndex;
+        private int index = 0;
 
         private BinarySearchTreeIterator() {
-            // Добавьте сюда инициализацию, если она необходима.
+            maxIndex = size();
+            if (root == null) return;
+            startNode = findNextMinNode(root);
         }
 
         /**
@@ -133,11 +199,10 @@ public class BinarySearchTree<T extends Comparable<T>> extends AbstractSet<T> im
          *
          * Средняя
          */
+        //T = O(1)
+        //R = O(1)
         @Override
-        public boolean hasNext() {
-            // TODO
-            throw new NotImplementedError();
-        }
+        public boolean hasNext() { return index != maxIndex; }
 
         /**
          * Получение следующего элемента
@@ -152,10 +217,32 @@ public class BinarySearchTree<T extends Comparable<T>> extends AbstractSet<T> im
          *
          * Средняя
          */
+        //T = O(1)
+        //R = O(1)
         @Override
         public T next() {
-            // TODO
-            throw new NotImplementedError();
+            if (index == maxIndex || maxIndex == 0) throw new NoSuchElementException();
+            if (index == 0) {               //когда next() вызвали впервые
+                index++;
+                finishNode = startNode;
+                return startNode.value;
+            }
+            index++;
+            if (startNode.right != null) {  //если у текущего узла есть правый узел, то есть, если текущий узел меньший из пары
+                finishNode = findNextMinNode(startNode.right); //то ищем наименьший узел из правой ветви
+                startNode = finishNode;
+                return startNode.value;
+            } else if (index != maxIndex) startNode = findNextMinParentNode(startNode); //иначе поднимаемся вверх по ветви до тех пор, пока не найдем наименьшего родителя
+            finishNode = startNode;
+            return startNode.value;
+        }
+
+        public Node<T> findNextMinNode(Node<T> current) {
+            return current.left != null ? findNextMinNode(current.left) : current;
+        }
+
+        public Node<T> findNextMinParentNode(Node<T> current) {
+            return current == current.parent.right ? findNextMinParentNode(current.parent) : current.parent;
         }
 
         /**
@@ -170,10 +257,13 @@ public class BinarySearchTree<T extends Comparable<T>> extends AbstractSet<T> im
          *
          * Сложная
          */
+        //T = O(N)
+        //R = O(1)
         @Override
         public void remove() {
-            // TODO
-            throw new NotImplementedError();
+            if (finishNode == null) throw new IllegalStateException();
+            BinarySearchTree.this.remove(finishNode.value);
+            finishNode = null;
         }
     }
 
