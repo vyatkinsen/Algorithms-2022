@@ -180,7 +180,7 @@ public class BinarySearchTree<T extends Comparable<T>> extends AbstractSet<T> im
 
     public class BinarySearchTreeIterator implements Iterator<T> {
         private Node<T> startNode, finishNode;
-        private final Integer maxIndex;
+        private final int maxIndex;
         private int index = 0;
 
         private BinarySearchTreeIterator() {
@@ -217,7 +217,7 @@ public class BinarySearchTree<T extends Comparable<T>> extends AbstractSet<T> im
          *
          * Средняя
          */
-        //T = O(1)
+        //T = O(N), где N - высота дерева
         //R = O(1)
         @Override
         public T next() {
