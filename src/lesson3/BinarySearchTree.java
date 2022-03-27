@@ -217,7 +217,7 @@ public class BinarySearchTree<T extends Comparable<T>> extends AbstractSet<T> im
          *
          * Средняя
          */
-        //T = O(N), где N - высота дерева
+        //T = O(N), где N - количество узлов
         //R = O(1)
         @Override
         public T next() {
