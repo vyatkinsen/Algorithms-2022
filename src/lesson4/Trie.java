@@ -1,7 +1,7 @@
 package lesson4;
 
 import java.util.*;
-import kotlin.NotImplementedError;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -84,16 +84,56 @@ public class Trie extends AbstractSet<String> implements Set<String> {
 
     /**
      * Итератор для префиксного дерева
-     *
+     * <p>
      * Спецификация: {@link Iterator} (Ctrl+Click по Iterator)
-     *
+     * <p>
      * Сложная
      */
     @NotNull
     @Override
     public Iterator<String> iterator() {
-        // TODO
-        throw new NotImplementedError();
+        return new PrefixTrieIterator();
     }
 
+    public class PrefixTrieIterator implements Iterator<String> {
+        String nextString;
+        Stack<String> stack = new Stack<>();
+
+        private PrefixTrieIterator() {
+            stackInit(root, "");
+        }
+
+        void stackInit(@NotNull Node node, String str) {
+            for (var childNode : node.children.entrySet()) {
+                if (childNode.getKey() != (char) 0) stackInit(childNode.getValue(), str + childNode.getKey());
+                else stack.add(str);
+            }
+        }
+
+        //T = O(1)
+        //R = O(1)
+        @Override
+        public boolean hasNext() {
+            return !stack.isEmpty();
+        }
+
+        //T = O(1)
+        //R = O(1)
+        @Override
+        public String next() {
+            if (hasNext()) return nextString = stack.pop();
+            else throw new NoSuchElementException();
+        }
+
+        //T = O(N), N - длина удаляемого слова
+        //R = O(N), N - длина удаляемого слова
+        @Override
+        public void remove() {
+            if (nextString == null) throw new IllegalStateException();
+            else {
+                Trie.this.remove(nextString);
+                nextString = null;
+            }
+        }
+    }
 }
