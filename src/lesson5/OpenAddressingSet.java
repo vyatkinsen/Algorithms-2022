@@ -1,19 +1,20 @@
 package lesson5;
 
-import kotlin.NotImplementedError;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.AbstractSet;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.Set;
 
 public class OpenAddressingSet<T> extends AbstractSet<T> {
-
     private final int bits;
 
     private final int capacity;
 
     private final Object[] storage;
+
+    private final Object OBJDELETED = new Object();
 
     private int size = 0;
 
@@ -22,9 +23,7 @@ public class OpenAddressingSet<T> extends AbstractSet<T> {
     }
 
     public OpenAddressingSet(int bits) {
-        if (bits < 2 || bits > 31) {
-            throw new IllegalArgumentException();
-        }
+        if (bits < 2 || bits > 31) throw new IllegalArgumentException();
         this.bits = bits;
         capacity = 1 << bits;
         storage = new Object[capacity];
@@ -43,9 +42,7 @@ public class OpenAddressingSet<T> extends AbstractSet<T> {
         int index = startingIndex(o);
         Object current = storage[index];
         while (current != null) {
-            if (current.equals(o)) {
-                return true;
-            }
+            if (current.equals(o)) return true;
             index = (index + 1) % capacity;
             current = storage[index];
         }
@@ -67,14 +64,10 @@ public class OpenAddressingSet<T> extends AbstractSet<T> {
         int startingIndex = startingIndex(t);
         int index = startingIndex;
         Object current = storage[index];
-        while (current != null) {
-            if (current.equals(t)) {
-                return false;
-            }
+        while (current != OBJDELETED && current != null) {
+            if (current.equals(t)) return false;
             index = (index + 1) % capacity;
-            if (index == startingIndex) {
-                throw new IllegalStateException("Table is full");
-            }
+            if (index == startingIndex) throw new IllegalStateException("Table is full");
             current = storage[index];
         }
         storage[index] = t;
@@ -85,7 +78,7 @@ public class OpenAddressingSet<T> extends AbstractSet<T> {
     /**
      * Удаление элемента из таблицы
      *
-     * Если элемент есть в таблица, функция удаляет его из дерева и возвращает true.
+     * Если элемент есть в таблице, функция удаляет его из дерева и возвращает true.
      * В ином случае функция оставляет множество нетронутым и возвращает false.
      * Высота дерева не должна увеличиться в результате удаления.
      *
@@ -95,7 +88,18 @@ public class OpenAddressingSet<T> extends AbstractSet<T> {
      */
     @Override
     public boolean remove(Object o) {
-        return super.remove(o);
+        int index = startingIndex(o);
+        Object current = storage[index];
+        while (current != null) {
+            if (current.equals(o)) {
+                storage[index] = OBJDELETED;
+                size--;
+                return true;
+            }
+            index = (index + 1) % capacity;
+            current = storage[index];
+        }
+        return false;
     }
 
     /**
@@ -111,7 +115,47 @@ public class OpenAddressingSet<T> extends AbstractSet<T> {
     @NotNull
     @Override
     public Iterator<T> iterator() {
-        // TODO
-        throw new NotImplementedError();
+        return new OpenAddressingSetIterator();
+    }
+
+    public class OpenAddressingSetIterator implements Iterator<T> {
+        private final int maxIndex = size();
+        private int iterationIndex = 0;
+
+        private Object currentObject;
+        private int currentObjectIndex = -1;
+
+        //T = O(1)
+        //R = O(1)
+        @Override
+        public boolean hasNext() {
+            return iterationIndex != maxIndex;
+        }
+
+        //T = O(N)
+        //R = O(1)
+        @SuppressWarnings("unchecked")
+        @Override
+        public T next() {
+            if (iterationIndex == maxIndex || maxIndex == 0) throw new NoSuchElementException();
+            currentObjectIndex++;
+            currentObject = storage[currentObjectIndex];
+            while (currentObject == null || currentObject == OBJDELETED) {
+                currentObjectIndex++;
+                currentObject = storage[currentObjectIndex];
+            }
+            iterationIndex++;
+            return (T) currentObject;
+        }
+
+        //T = O(1)
+        //R = O(1)
+        @Override
+        public void remove() {
+            if (currentObject == null || currentObjectIndex < 0) throw new IllegalStateException();
+            storage[currentObjectIndex] = OBJDELETED;
+            currentObject = null;
+            size--;
+        }
     }
 }
