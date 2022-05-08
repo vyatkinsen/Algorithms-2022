@@ -86,6 +86,8 @@ public class OpenAddressingSet<T> extends AbstractSet<T> {
      *
      * Средняя
      */
+    //T = O(N)
+    //R = O(1)
     @Override
     public boolean remove(Object o) {
         int index = startingIndex(o);

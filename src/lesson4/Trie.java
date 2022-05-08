@@ -9,14 +9,14 @@ import org.jetbrains.annotations.Nullable;
  * Префиксное дерево для строк
  */
 public class Trie extends AbstractSet<String> implements Set<String> {
+    private final Node root = new Node();
+    private int size = 0;
 
     private static class Node {
         SortedMap<Character, Node> children = new TreeMap<>();
+        Node parent = null;
+        String value = null;
     }
-
-    private final Node root = new Node();
-
-    private int size = 0;
 
     @Override
     public int size() {
@@ -53,20 +53,21 @@ public class Trie extends AbstractSet<String> implements Set<String> {
     public boolean add(String element) {
         Node current = root;
         boolean modified = false;
+        StringBuilder nodeValue = new StringBuilder();
         for (char character : withZero(element).toCharArray()) {
+            nodeValue.append(character);
             Node child = current.children.get(character);
-            if (child != null) {
-                current = child;
-            } else {
+            if (child != null) current = child;
+            else {
                 modified = true;
                 Node newChild = new Node();
                 current.children.put(character, newChild);
+                newChild.parent = current;
+                newChild.value = nodeValue.toString();
                 current = newChild;
             }
         }
-        if (modified) {
-            size++;
-        }
+        if (modified) size++;
         return modified;
     }
 
@@ -77,16 +78,24 @@ public class Trie extends AbstractSet<String> implements Set<String> {
         if (current == null) return false;
         if (current.children.remove((char) 0) != null) {
             size--;
+            removeFree(current);
             return true;
         }
         return false;
     }
 
+    private void removeFree(@NotNull Node current) {
+        if (current.children.size() == 0 && current != root) {
+            current.parent.children.remove(current.value.charAt(current.value.length() - 1));
+            removeFree(current.parent);
+        }
+    }
+
     /**
      * Итератор для префиксного дерева
-     * <p>
+     *
      * Спецификация: {@link Iterator} (Ctrl+Click по Iterator)
-     * <p>
+     *
      * Сложная
      */
     @NotNull
@@ -96,44 +105,67 @@ public class Trie extends AbstractSet<String> implements Set<String> {
     }
 
     public class PrefixTrieIterator implements Iterator<String> {
-        String nextString;
-        Stack<String> stack = new Stack<>();
-
-        private PrefixTrieIterator() {
-            stackInit(root, "");
-        }
-
-        void stackInit(@NotNull Node node, String str) {
-            for (var childNode : node.children.entrySet()) {
-                if (childNode.getKey() != (char) 0) stackInit(childNode.getValue(), str + childNode.getKey());
-                else stack.add(str);
-            }
-        }
+        private Node previousNode, startNode, finishNode;
+        private final int maxIndex = size();
+        private int index = 0;
 
         //T = O(1)
         //R = O(1)
         @Override
         public boolean hasNext() {
-            return !stack.isEmpty();
+            return index != maxIndex;
         }
 
-        //T = O(1)
+        //T = O(N), где N - длина удаляемого слова
         //R = O(1)
         @Override
         public String next() {
-            if (hasNext()) return nextString = stack.pop();
-            else throw new NoSuchElementException();
+            if (maxIndex == 0 || index == maxIndex) throw new NoSuchElementException();
+            index++;
+            if (startNode == null) {
+                startNode = findLeftest(root);
+                finishNode = startNode;
+                return startNode.parent.value;
+            }
+            previousNode = startNode;
+            boolean visited = true;
+            while (visited || (startNode != finishNode)) {
+                visited = true;
+                finishNode = startNode;
+                for (Map.Entry<Character, Node> childNode : finishNode.parent.children.entrySet()) {
+                    if (!visited) {
+                        startNode = findLeftest(childNode.getValue());
+                        if (startNode.value.charAt(startNode.value.length() - 1) == (char) 0) {
+                            finishNode = startNode;
+                            return startNode.parent.value;
+                        }
+                    } else if (childNode.getKey() == startNode.value.charAt(startNode.value.length() - 1)) visited = false;
+                }
+                startNode = finishNode.parent;
+            }
+            return finishNode.value;
         }
 
-        //T = O(N), N - длина удаляемого слова
-        //R = O(N), N - длина удаляемого слова
+        private Node findLeftest(@NotNull Node node) {
+            if (node.children.size() != 0) {
+                for (Map.Entry<Character, Node> childNode : node.children.entrySet()) {
+                    if (childNode.getKey() == (char) 0) return childNode.getValue();
+                    else return findLeftest(childNode.getValue());
+                }
+            }
+            return node;
+        }
+
+        //T = O(N)
+        //R = O(1)
         @Override
         public void remove() {
-            if (nextString == null) throw new IllegalStateException();
-            else {
-                Trie.this.remove(nextString);
-                nextString = null;
-            }
+            if (finishNode == null) throw new IllegalStateException();
+            startNode = previousNode;
+            finishNode.parent.children.remove((char) 0);
+            removeFree(finishNode.parent);
+            finishNode = null;
+            size--;
         }
     }
 }
